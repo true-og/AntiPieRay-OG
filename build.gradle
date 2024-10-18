@@ -2,6 +2,7 @@ plugins {
     // java
     id 'java'
     id 'java-library'
+	id 'eclipse'
 
     // for shading in dependencies
     id "com.github.johnrengelman.shadow" version "7.1.2"
@@ -14,7 +15,7 @@ ext {
     hasMC = true
     hasTesting = false
 
-    versionMC = "1.19.3-R0.1-SNAPSHOT"
+    versionMC = "1.19.4-R0.1-SNAPSHOT"
 }
 
 apply from: './module.gradle', to: project
