@@ -5,6 +5,8 @@ build/
 .settings/
 .modules/
 .project/
+libs/.settings
+libs/.project
 ### SECURITY ###
 /gradle.properties
 /secret-keys.gpg

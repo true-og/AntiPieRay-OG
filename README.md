@@ -28,3 +28,5 @@ A fork of [AntiPieRay](https://github.com/orbyfied/AntiPieRay) maintained for 1.
 1.0.1: 1.19.4 NMS update by @SKBotNL
 
 1.0.2: 1.19.4 plugin update by @NotAlexNoyle
+
+1.0.3: Fix NullPointerException on player quit by @NotAlexNoyle

@@ -54,10 +54,25 @@ public class Injector {
      */
     public void uninject(Player player) {
 
-        // Remove handler.
+        // Remove handler from the map.
         PlayerBlockEntityHandler handler = handlerMap.remove(player.getUniqueId());
 
-        handler.player.connection.connection.channel.pipeline().remove(handler);
+        // If the handler is null, there's nothing left to uninject.
+        if (handler == null) {
+
+            return;
+
+        }
+
+        // Check if the pipeline still has that handler ID.
+        if (handler.player != null && handler.player.connection != null && handler.player.connection.connection != null
+                && handler.player.connection.connection.channel != null
+                && handler.player.connection.connection.channel.pipeline().get(HANDLER_ID) != null) {
+
+            // Pipe cleaner.
+            handler.player.connection.connection.channel.pipeline().remove(HANDLER_ID);
+
+        }
 
     }
 

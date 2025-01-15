@@ -11,7 +11,7 @@ java {
 }
 
 group = "net.trueog.antipierayog"
-version = "1.0.2"
+version = "1.0.3"
 val apiVersion = "1.19"
 
 repositories {
