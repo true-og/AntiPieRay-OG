@@ -1,6 +1,5 @@
-# AntiPieRay
-Attempts to prevent usage of the F3 debug pie chart as an exploit for base finding by preventing players from rendering specific block entities
-when they are invisible to the player.
+# AntiPieRay-OG
+A fork of [AntiPieRay](https://github.com/orbyfied/AntiPieRay) maintained for 1.19.4 by [TrueOG Network](https://true-og.net). The plugin attempts to prevent usage of the F3 debug pie chart as an exploit for base finding by preventing players from rendering specific block entities from a distance when they are invisible to the player.
 
 ### Technical Details
 > **Injection**  
@@ -21,3 +20,11 @@ when they are invisible to the player.
 > player.
 > * Check if the block entity is visible to the player utilizing a custom
 > ray cast algorithm you can find in `FastRayCast`.
+
+### Change log
+
+1.0: Initial TrueOG Fork based on KiulWasTaken/AntiPieRay
+
+1.0.1: 1.19.4 NMS update by @SKBotNL
+
+1.0.2: 1.19.4 plugin update by @NotAlexNoyle

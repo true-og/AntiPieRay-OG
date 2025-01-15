@@ -1,5 +1,5 @@
 ###
-### AntiPieRay Main Configuration File
+### AntiPieRay-OG Main Configuration File
 ### by Orbyfied 2023
 ###
 
@@ -14,4 +14,4 @@ checked-block-entities:
 
 # The distance a checked tile entity has to lie within to
 # be sent regardless of obstruction.
-always-view-distance: 5.0
+always-view-distance: 4.0

@@ -1,7 +1,10 @@
 .idea/
 build/
 .gradle/
-
+.classpath
+.settings/
+.modules/
+.project/
 ### SECURITY ###
 /gradle.properties
 /secret-keys.gpg

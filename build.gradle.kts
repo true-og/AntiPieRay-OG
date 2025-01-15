@@ -1,5 +1,6 @@
 plugins {
     java
+	eclipse
     id("com.gradleup.shadow") version "8.3.2"
     id("io.papermc.paperweight.userdev") version "2.0.0-beta.11"
 }
@@ -9,8 +10,8 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
 }
 
-group = "net.orbyfied.plugins"
-version = "1.0.0"
+group = "net.trueog.antipierayog"
+version = "1.0.2"
 val apiVersion = "1.19"
 
 repositories {
@@ -23,9 +24,9 @@ repositories {
 
 dependencies {
     paperweight.paperDevBundle("1.19.4-R0.1-SNAPSHOT")
-
     compileOnly("net.orbyfied.j8:j8-util:0.2.2.1")
     compileOnly("it.unimi.dsi:fastutil:8.5.8")
+    implementation(project(":libs:Utilities-OG"))
 }
 
 tasks.named<ProcessResources>("processResources") {

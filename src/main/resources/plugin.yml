@@ -1,7 +1,7 @@
 # properties
-name: AntiPieRay
+name: AntiPieRay-OG
 version: '${version}'
-main: net.orbyfied.antipieray.AntiPieRay
+main: net.trueog.antipierayog.AntiPieRayOG
 description: Attempts to prevent the usage of the PieRay exploit to find bases.
 api-version: '${apiVersion}'
 
@@ -12,4 +12,4 @@ libraries:
 # commands
 commands:
   antipieray:
-    description: AntiPieRay main command
+    description: AntiPieRay-OG main command
