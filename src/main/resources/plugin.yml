@@ -1,0 +1,5 @@
+name: AntiPieRay-OG
+version: '${version}'
+main: net.trueog.antiPieRayOG.AntiPieRay
+api-version: '${apiVersion}'
+author: "SKBotNL"
