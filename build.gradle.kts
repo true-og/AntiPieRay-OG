@@ -1,6 +1,7 @@
 import java.io.BufferedReader
 
 plugins {
+    eclipse
     kotlin("jvm") version "2.2.20"
     id("com.diffplug.spotless") version "7.0.4"
     id("com.gradleup.shadow") version "8.3.6"

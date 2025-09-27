@@ -463,9 +463,7 @@ class BlockEntityHider {
         val chunkX = player.location.x.toInt() shr 4
         val chunkZ = player.location.z.toInt() shr 4
         blockHiddenForPlayers
-            .filterKeys {
-                abs(chunkX - (it.x shr 4)) > threshold || abs(chunkZ - (it.z shr 4)) > threshold
-            }
+            .filterKeys { abs(chunkX - (it.x shr 4)) > threshold || abs(chunkZ - (it.z shr 4)) > threshold }
             .forEach { (pos, uuids) -> uuids.forEach { uuid -> removePos(uuid, pos) } }
     }
 
