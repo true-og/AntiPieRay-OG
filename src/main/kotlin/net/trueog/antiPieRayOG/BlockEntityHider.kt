@@ -3,8 +3,8 @@ package net.trueog.antiPieRayOG
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.min
-import kotlin.math.roundToInt
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
@@ -19,7 +19,7 @@ class BlockEntityHider {
             mapOf(
                 // Up
                 Vector(0, 1, 0) to
-                    listOf(
+                    setOf(
                         Vector(0.5, 0.5, 0.5),
                         Vector(0.5, 0.5, -0.5),
                         Vector(-0.5, 0.5, 0.5),
@@ -28,7 +28,7 @@ class BlockEntityHider {
                     ),
                 // Down
                 Vector(0, -1, 0) to
-                    listOf(
+                    setOf(
                         Vector(0.5, -0.5, 0.5),
                         Vector(0.5, -0.5, -0.5),
                         Vector(-0.5, -0.5, 0.5),
@@ -37,7 +37,7 @@ class BlockEntityHider {
                     ),
                 // North
                 Vector(0, 0, -1) to
-                    listOf(
+                    setOf(
                         Vector(0.5, 0.5, -0.5),
                         Vector(0.5, -0.5, -0.5),
                         Vector(-0.5, 0.5, -0.5),
@@ -46,7 +46,7 @@ class BlockEntityHider {
                     ),
                 // South
                 Vector(0, 0, 1) to
-                    listOf(
+                    setOf(
                         Vector(0.5, 0.5, 0.5),
                         Vector(0.5, -0.5, 0.5),
                         Vector(-0.5, 0.5, 0.5),
@@ -55,7 +55,7 @@ class BlockEntityHider {
                     ),
                 // West
                 Vector(-1, 0, 0) to
-                    listOf(
+                    setOf(
                         Vector(-0.5, 0.5, 0.5),
                         Vector(-0.5, -0.5, 0.5),
                         Vector(-0.5, 0.5, -0.5),
@@ -64,7 +64,7 @@ class BlockEntityHider {
                     ),
                 // East
                 Vector(1, 0, 0) to
-                    listOf(
+                    setOf(
                         Vector(0.5, 0.5, 0.5),
                         Vector(0.5, -0.5, 0.5),
                         Vector(0.5, 0.5, -0.5),
@@ -75,41 +75,48 @@ class BlockEntityHider {
 
         val blockOffsets =
             listOf(
-                Vector(0.5, 0.5, 0.5),
-                Vector(0.5, 0.5, -0.5),
-                Vector(0.5, -0.5, 0.5),
-                Vector(0.5, -0.5, -0.5),
-                Vector(-0.5, 0.5, 0.5),
-                Vector(-0.5, 0.5, -0.5),
-                Vector(-0.5, -0.5, 0.5),
-                Vector(-0.5, -0.5, -0.5),
+                Vector(0.49, 0.49, 0.49),
+                Vector(0.49, 0.49, -0.49),
+                Vector(0.49, -0.49, 0.49),
+                Vector(0.49, -0.49, -0.49),
+                Vector(-0.49, 0.49, 0.49),
+                Vector(-0.49, 0.49, -0.49),
+                Vector(-0.49, -0.49, 0.49),
+                Vector(-0.49, -0.49, -0.49),
             )
 
-        fun canSee(eye: Location, loc: Location): Boolean {
+        fun canSee(eye: Location, loc: Location): Set<BlockPosition>? {
             // Get the center
             val blockCenterLoc = loc.clone().add(0.5, 0.5, 0.5)
-            if (blockCenterLoc.toVector().subtract(eye.toVector()).dot(eye.direction) < 0) return false
 
-            val blockCenterDir = eye.clone().toVector().subtract(blockCenterLoc.toVector()).normalize()
+            val eyeOffsets =
+                if (blockCenterLoc.toVector().subtract(eye.toVector()).dot(eye.direction) < 0) {
+                    // Simplify logic if the block is behind the player
+                    // There's no reason to add a small margin if the block is unlikely to be seen soon anyway
+                    setOf(Vector(0, 0, 0))
+                } else {
+                    val blockCenterDir = eye.clone().toVector().subtract(blockCenterLoc.toVector()).normalize()
 
-            var bestIndex: Int = -1
-            var bestDot = -Double.MAX_VALUE
-            eyeOffsetMap.entries.forEachIndexed { index, (faceVec, _) ->
-                val dot = blockCenterDir.dot(faceVec)
-                if (dot > bestDot) {
-                    bestDot = dot
-                    bestIndex = index
+                    var bestIndex: Int = -1
+                    var bestDot = -Double.MAX_VALUE
+                    eyeOffsetMap.entries.forEachIndexed { index, (faceVec, _) ->
+                        val dot = blockCenterDir.dot(faceVec)
+                        if (dot > bestDot) {
+                            bestDot = dot
+                            bestIndex = index
+                        }
+                    }
+                    eyeOffsetMap.values.elementAt(bestIndex)
                 }
-            }
-            val eyeOffsets = eyeOffsetMap.values.elementAt(bestIndex)
 
+            val blockingBlocks: MutableSet<BlockPosition> = mutableSetOf()
             for (eyeOffset in eyeOffsets) {
                 val offsetEye = eye.clone().add(eyeOffset)
                 for (offset in blockOffsets) {
                     val blockLoc = blockCenterLoc.clone().add(offset)
                     val direction = blockLoc.toVector().subtract(offsetEye.toVector()).normalize()
                     val eyeFacing = offsetEye.clone().setDirection(direction)
-                    val maxDistance = eyeFacing.distance(blockLoc).roundToInt()
+                    val maxDistance = ceil(eyeFacing.distance(blockLoc)).toInt()
                     val blockIterator = BlockIterator(eyeFacing, 0.0, maxDistance)
 
                     var visible = true
@@ -120,15 +127,18 @@ class BlockEntityHider {
                         }
                         val hitBlockType = hitBlock.type
                         if (!isAir(hitBlockType) && !isLiquid(hitBlockType) && !isTransparent(hitBlockType)) {
+                            if (eyeOffset == Vector(0, 0, 0)) {
+                                blockingBlocks += hitBlock.location.toBlockPosition()
+                            }
                             visible = false
                             break
                         }
                     }
 
-                    if (visible) return true
+                    if (visible) return null
                 }
             }
-            return false
+            return blockingBlocks
         }
 
         fun isTransparent(material: Material): Boolean {
@@ -433,24 +443,7 @@ class BlockEntityHider {
             }
         }
 
-        val neighbourOffsets =
-            listOf(
-                Triple(1, 0, 0),
-                Triple(-1, 0, 0),
-                Triple(0, 1, 0),
-                Triple(0, -1, 0),
-                Triple(0, 0, 1),
-                Triple(0, 0, -1),
-            )
-
-        fun getAdjacentPositions(pos: BlockPosition): Set<BlockPosition> =
-            neighbourOffsets.map { (dx, dy, dz) -> pos.add(dx, dy, dz) }.toSet()
-
         data class BlockPosition(var x: Int, var y: Int, var z: Int) {
-            fun add(x: Int, y: Int, z: Int): BlockPosition {
-                return BlockPosition(this.x + x, this.y + y, this.z + z)
-            }
-
             fun toLocation(world: World) = Location(world, x.toDouble(), y.toDouble(), z.toDouble())
         }
 
@@ -460,23 +453,45 @@ class BlockEntityHider {
     val hiddenBlocksForPlayer: MutableMap<UUID, MutableSet<BlockPosition>> = ConcurrentHashMap()
     val blockHiddenForPlayers: MutableMap<BlockPosition, MutableSet<UUID>> = ConcurrentHashMap()
 
-    fun addPos(uuid: UUID, pos: BlockPosition) {
+    /**
+     * Outer map key: A hidden block
+     *
+     * Inner map key: A block that is preventing the hidden block to be seen
+     */
+    val blockBlockedByForPlayer: MutableMap<BlockPosition, MutableMap<BlockPosition, MutableSet<UUID>>> =
+        ConcurrentHashMap()
+
+    fun addPos(uuid: UUID, pos: BlockPosition, blockingPositions: Set<BlockPosition>) {
         hiddenBlocksForPlayer.computeIfAbsent(uuid) { ConcurrentHashMap.newKeySet() }.add(pos)
         blockHiddenForPlayers.computeIfAbsent(pos) { ConcurrentHashMap.newKeySet() }.add(uuid)
+        val entry = blockBlockedByForPlayer.computeIfAbsent(pos) { ConcurrentHashMap() }
+        blockingPositions.forEach { entry.computeIfAbsent(it) { ConcurrentHashMap.newKeySet() }.add(uuid) }
     }
 
     fun removePos(uuid: UUID, pos: BlockPosition) {
         hiddenBlocksForPlayer[uuid]?.remove(pos)
         blockHiddenForPlayers[pos]?.remove(uuid)
+        blockBlockedByForPlayer[pos]?.entries?.removeAll { (_, uuids) ->
+            uuids.remove(uuid)
+            uuids.isEmpty()
+        }
 
         if (hiddenBlocksForPlayer[uuid]?.isEmpty() == true) hiddenBlocksForPlayer.remove(uuid)
         if (blockHiddenForPlayers[pos]?.isEmpty() == true) blockHiddenForPlayers.remove(pos)
+        if (blockBlockedByForPlayer[pos]?.isEmpty() == true) blockBlockedByForPlayer.remove(pos)
     }
 
     fun removeAllPos(uuid: UUID) {
         val hiddenBlocks = hiddenBlocksForPlayer[uuid] ?: return
         hiddenBlocks.forEach { blockHiddenForPlayers[it]?.remove(uuid) }
         hiddenBlocksForPlayer.remove(uuid)
+        blockBlockedByForPlayer.entries.removeAll {
+            it.value.values.removeAll { uuids ->
+                uuids.remove(uuid)
+                uuids.isEmpty()
+            }
+            it.value.isEmpty()
+        }
     }
 
     fun removeOutOfRangeBlocks(player: Player) {
@@ -501,8 +516,8 @@ class BlockEntityHider {
         val blockList = hiddenBlocksForPlayer[player.uniqueId] ?: return
         blockList.forEach {
             val loc = it.toLocation(player.world)
-            val visible = canSee(player.eyeLocation, loc)
-            if (!visible) {
+            val blockingBlock = canSee(player.eyeLocation, loc)
+            if (blockingBlock != null) {
                 return@forEach
             }
             val block = player.world.getBlockAt(loc)
@@ -513,19 +528,24 @@ class BlockEntityHider {
 
     fun updateBlockVisibility(pos: BlockPosition, world: World) {
         removeIfNeeded(pos, world)
-        val adjacentPositions = getAdjacentPositions(pos)
-        adjacentPositions.forEach { adjacentPos ->
-            val loc = adjacentPos.toLocation(world)
-            blockHiddenForPlayers[adjacentPos]?.forEach { uuid ->
-                val player = Bukkit.getPlayer(uuid) ?: return@forEach
-                val visible = canSee(player.eyeLocation, loc)
-                if (!visible) {
-                    return@forEach
+        blockBlockedByForPlayer.entries.removeAll { (blockPos, entry) ->
+            val blockLoc = blockPos.toLocation(world)
+            val posEntry = entry[pos]
+            posEntry?.removeAll { uuid ->
+                val player = Bukkit.getPlayer(uuid) ?: return@removeAll false
+                val blockingBlockPositions = canSee(player.eyeLocation, blockLoc)
+                if (blockingBlockPositions != null) {
+                    blockingBlockPositions.forEach { blockingBlockPos ->
+                        entry.computeIfAbsent(blockingBlockPos) { ConcurrentHashMap.newKeySet() }.add(uuid)
+                    }
+                    return@removeAll true
                 }
-                val block = player.world.getBlockAt(loc)
-                removePos(player.uniqueId, adjacentPos)
-                player.sendBlockChange(loc, block.blockData)
+                val block = world.getBlockAt(blockLoc)
+                removePos(uuid, blockPos)
+                player.sendBlockChange(blockLoc, block.blockData)
+                false
             }
+            posEntry?.isEmpty() == true
         }
     }
 }

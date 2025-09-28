@@ -25,15 +25,15 @@ class BlockChangePacketListener : PacketListener {
         }
 
         val pos = blockChange.blockPosition
-        val visible =
+        val blockingBlockPositions =
             BlockEntityHider.canSee(
                 player.eyeLocation,
                 Location(player.world, pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble()),
             )
 
-        if (!visible) {
+        if (blockingBlockPositions != null) {
             val blockPos = BlockPosition(pos.x, pos.y, pos.z)
-            AntiPieRay.blockEntityHider.addPos(player.uniqueId, blockPos)
+            AntiPieRay.blockEntityHider.addPos(player.uniqueId, blockPos, blockingBlockPositions)
             event.isCancelled = true
         }
     }
