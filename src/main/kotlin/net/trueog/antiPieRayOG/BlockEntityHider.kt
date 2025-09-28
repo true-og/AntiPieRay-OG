@@ -358,7 +358,13 @@ class BlockEntityHider {
                 Material.YELLOW_WALL_BANNER,
                 Material.PISTON,
                 Material.STICKY_PISTON,
-                Material.PISTON_HEAD ->
+                Material.PISTON_HEAD,
+                Material.SNOW,
+                Material.POWDER_SNOW,
+                Material.ICE,
+                Material.BLUE_ICE,
+                Material.PACKED_ICE,
+                Material.FROSTED_ICE ->
                     // </editor-fold>
                     true
                 else -> false
