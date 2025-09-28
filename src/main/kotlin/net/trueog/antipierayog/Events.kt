@@ -11,23 +11,9 @@ import org.bukkit.event.block.BlockBurnEvent
 import org.bukkit.event.block.BlockExplodeEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
-import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.event.player.PlayerQuitEvent
 
 class Events : Listener {
-    @EventHandler(priority = EventPriority.MONITOR)
-    fun onPlayerMove(event: PlayerMoveEvent) {
-        val worldName = event.player.world.name
-        if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
-
-        Bukkit.getScheduler()
-            .runTaskLaterAsynchronously(
-                AntiPieRay.plugin,
-                Runnable { AntiPieRay.blockEntityHider.updateBlockVisibility(event.player) },
-                1L,
-            )
-    }
-
     fun genericBlockBreakHandler(block: Block) {
         Bukkit.getScheduler()
             .runTaskLaterAsynchronously(
@@ -76,11 +62,13 @@ class Events : Listener {
         val worldName = event.player.world.name
         if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
 
-        AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId)
+        Bukkit.getScheduler()
+            .runTask(AntiPieRay.plugin, Runnable { AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId) })
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerQuit(event: PlayerQuitEvent) {
-        AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId)
+        Bukkit.getScheduler()
+            .runTask(AntiPieRay.plugin, Runnable { AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId) })
     }
 }

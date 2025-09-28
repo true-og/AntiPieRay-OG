@@ -5,9 +5,8 @@ import com.github.retrooper.packetevents.event.PacketListenerPriority
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
+import java.util.*
 import org.bukkit.Bukkit
-import java.util.Collections
-import java.util.IdentityHashMap
 import org.bukkit.Material
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -97,6 +96,9 @@ class AntiPieRay : JavaPlugin() {
         )
         PacketEvents.getAPI().eventManager.registerListener(ChunkDataPacketListener(), PacketListenerPriority.NORMAL)
         PacketEvents.getAPI().eventManager.registerListener(BlockChangePacketListener(), PacketListenerPriority.NORMAL)
+        PacketEvents.getAPI()
+            .eventManager
+            .registerListener(PlayerPositionRotationPacketListener(), PacketListenerPriority.NORMAL)
     }
 
     override fun onEnable() {
