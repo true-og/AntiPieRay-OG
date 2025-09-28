@@ -118,7 +118,8 @@ class BlockEntityHider {
                         if (hitBlock == loc.block) {
                             break
                         }
-                        if (!isAir(hitBlock.type) && !isLiquid(hitBlock.type) && !isTransparent(hitBlock.type)) {
+                        val hitBlockType = hitBlock.type
+                        if (!isAir(hitBlockType) && !isLiquid(hitBlockType) && !isTransparent(hitBlockType)) {
                             visible = false
                             break
                         }
