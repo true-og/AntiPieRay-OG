@@ -426,7 +426,8 @@ class BlockEntityHider {
         if (hiddenBlocksByPlayer[uuid]?.isEmpty() == true) hiddenBlocksByPlayer.remove(uuid)
         if (playersByHiddenBlock[pos]?.isEmpty() == true) playersByHiddenBlock.remove(pos)
         if (!skipBlockBlockedByForPlayer) {
-            if (blockingBlockForPlayersByHiddenBlock[pos]?.isEmpty() == true) blockingBlockForPlayersByHiddenBlock.remove(pos)
+            if (blockingBlockForPlayersByHiddenBlock[pos]?.isEmpty() == true)
+                blockingBlockForPlayersByHiddenBlock.remove(pos)
         }
     }
 
