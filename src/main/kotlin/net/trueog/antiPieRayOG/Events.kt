@@ -15,7 +15,12 @@ class Events : Listener {
         val worldName = event.player.world.name
         if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
 
-        AntiPieRay.blockEntityHider.updateBlockVisibility(event.player)
+        Bukkit.getScheduler()
+            .runTaskLaterAsynchronously(
+                AntiPieRay.plugin,
+                Runnable { AntiPieRay.blockEntityHider.updateBlockVisibility(event.player) },
+                1L,
+            )
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -24,7 +29,7 @@ class Events : Listener {
         if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
 
         Bukkit.getScheduler()
-            .runTask(
+            .runTaskLaterAsynchronously(
                 AntiPieRay.plugin,
                 Runnable {
                     AntiPieRay.blockEntityHider.updateBlockVisibility(
@@ -32,6 +37,7 @@ class Events : Listener {
                         event.block.world,
                     )
                 },
+                1L,
             )
     }
 
