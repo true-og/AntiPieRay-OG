@@ -5,6 +5,7 @@ import com.github.retrooper.packetevents.event.PacketListenerPriority
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
+import org.bukkit.Bukkit
 import java.util.Collections
 import java.util.IdentityHashMap
 import org.bukkit.Material
@@ -108,6 +109,7 @@ class AntiPieRay : JavaPlugin() {
     }
 
     override fun onDisable() {
+        Bukkit.getScheduler().cancelTasks(this)
         PacketEvents.getAPI().terminate()
     }
 }
