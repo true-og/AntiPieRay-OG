@@ -1,6 +1,6 @@
-package net.trueog.antiPieRayOG
+package net.trueog.antipierayog
 
-import net.trueog.antiPieRayOG.BlockEntityHider.Companion.toBlockPosition
+import net.trueog.antipierayog.BlockEntityHider.Companion.toBlockPosition
 import org.bukkit.Bukkit
 import org.bukkit.block.Block
 import org.bukkit.event.EventHandler

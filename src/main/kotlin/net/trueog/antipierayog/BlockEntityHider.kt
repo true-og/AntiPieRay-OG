@@ -1,4 +1,4 @@
-package net.trueog.antiPieRayOG
+package net.trueog.antipierayog
 
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
