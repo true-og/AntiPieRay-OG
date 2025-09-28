@@ -468,17 +468,21 @@ class BlockEntityHider {
         blockingPositions.forEach { entry.computeIfAbsent(it) { ConcurrentHashMap.newKeySet() }.add(uuid) }
     }
 
-    fun removePos(uuid: UUID, pos: BlockPosition) {
+    fun removePos(uuid: UUID, pos: BlockPosition, skipBlockBlockedByForPlayer: Boolean = false) {
         hiddenBlocksForPlayer[uuid]?.remove(pos)
         blockHiddenForPlayers[pos]?.remove(uuid)
-        blockBlockedByForPlayer[pos]?.entries?.removeAll { (_, uuids) ->
-            uuids.remove(uuid)
-            uuids.isEmpty()
+        if (!skipBlockBlockedByForPlayer) {
+            blockBlockedByForPlayer[pos]?.entries?.removeAll { (_, uuids) ->
+                uuids.remove(uuid)
+                uuids.isEmpty()
+            }
         }
 
         if (hiddenBlocksForPlayer[uuid]?.isEmpty() == true) hiddenBlocksForPlayer.remove(uuid)
         if (blockHiddenForPlayers[pos]?.isEmpty() == true) blockHiddenForPlayers.remove(pos)
-        if (blockBlockedByForPlayer[pos]?.isEmpty() == true) blockBlockedByForPlayer.remove(pos)
+        if (!skipBlockBlockedByForPlayer) {
+            if (blockBlockedByForPlayer[pos]?.isEmpty() == true) blockBlockedByForPlayer.remove(pos)
+        }
     }
 
     fun removeAllPos(uuid: UUID) {
@@ -541,9 +545,9 @@ class BlockEntityHider {
                     return@removeAll true
                 }
                 val block = world.getBlockAt(blockLoc)
-                removePos(uuid, blockPos)
+                removePos(uuid, blockPos, true)
                 player.sendBlockChange(blockLoc, block.blockData)
-                false
+                true
             }
             posEntry?.isEmpty() == true
         }
