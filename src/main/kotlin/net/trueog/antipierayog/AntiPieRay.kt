@@ -98,7 +98,7 @@ class AntiPieRay : JavaPlugin() {
         PacketEvents.getAPI().eventManager.registerListener(BlockChangePacketListener(), PacketListenerPriority.NORMAL)
         PacketEvents.getAPI()
             .eventManager
-            .registerListener(PlayerPositionRotationPacketListener(), PacketListenerPriority.NORMAL)
+            .registerListener(PlayerPositionRotationPacketListener(), PacketListenerPriority.MONITOR)
     }
 
     override fun onEnable() {
