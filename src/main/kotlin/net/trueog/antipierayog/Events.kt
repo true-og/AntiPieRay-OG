@@ -12,6 +12,7 @@ import org.bukkit.event.block.BlockExplodeEvent
 import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerQuitEvent
 
 class Events : Listener {
     @EventHandler(priority = EventPriority.MONITOR)
@@ -75,6 +76,11 @@ class Events : Listener {
         val worldName = event.player.world.name
         if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
 
+        AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId)
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onPlayerQuit(event: PlayerQuitEvent) {
         AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId)
     }
 }
