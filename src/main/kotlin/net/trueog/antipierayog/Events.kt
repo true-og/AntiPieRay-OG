@@ -63,12 +63,12 @@ class Events : Listener {
         if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
 
         Bukkit.getScheduler()
-            .runTask(AntiPieRay.plugin, Runnable { AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId) })
+            .runTaskAsynchronously(AntiPieRay.plugin, Runnable { AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId) })
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onPlayerQuit(event: PlayerQuitEvent) {
         Bukkit.getScheduler()
-            .runTask(AntiPieRay.plugin, Runnable { AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId) })
+            .runTaskAsynchronously(AntiPieRay.plugin, Runnable { AntiPieRay.blockEntityHider.removeAllPos(event.player.uniqueId) })
     }
 }
