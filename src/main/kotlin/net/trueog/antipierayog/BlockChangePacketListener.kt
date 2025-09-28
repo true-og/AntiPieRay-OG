@@ -1,10 +1,10 @@
-package net.trueog.antiPieRayOG
+package net.trueog.antipierayog
 
 import com.github.retrooper.packetevents.event.PacketListener
 import com.github.retrooper.packetevents.event.PacketSendEvent
 import com.github.retrooper.packetevents.protocol.packettype.PacketType
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerBlockChange
-import net.trueog.antiPieRayOG.BlockEntityHider.Companion.BlockPosition
+import net.trueog.antipierayog.BlockEntityHider.Companion.BlockPosition
 import org.bukkit.Location
 import org.bukkit.entity.Player
 
@@ -25,15 +25,15 @@ class BlockChangePacketListener : PacketListener {
         }
 
         val pos = blockChange.blockPosition
-        val visible =
+        val blockingBlockPositions =
             BlockEntityHider.canSee(
                 player.eyeLocation,
                 Location(player.world, pos.x.toDouble(), pos.y.toDouble(), pos.z.toDouble()),
             )
 
-        if (!visible) {
+        if (blockingBlockPositions != null) {
             val blockPos = BlockPosition(pos.x, pos.y, pos.z)
-            AntiPieRay.blockEntityHider.addPos(player.uniqueId, blockPos)
+            AntiPieRay.blockEntityHider.addPos(player.uniqueId, blockPos, blockingBlockPositions)
             event.isCancelled = true
         }
     }

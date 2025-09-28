@@ -1,4 +1,4 @@
-package net.trueog.antiPieRayOG
+package net.trueog.antipierayog
 
 import com.github.retrooper.packetevents.event.PacketListener
 import com.github.retrooper.packetevents.event.PacketSendEvent
@@ -6,7 +6,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType
 import com.github.retrooper.packetevents.protocol.world.chunk.Column
 import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerChunkData
-import net.trueog.antiPieRayOG.BlockEntityHider.Companion.BlockPosition
+import net.trueog.antipierayog.BlockEntityHider.Companion.BlockPosition
 import org.bukkit.Location
 import org.bukkit.entity.Player
 
@@ -40,15 +40,15 @@ class ChunkDataPacketListener : PacketListener {
                         val absoluteY = sectionBaseY + y
                         val absoluteZ = column.z * 16 + z
 
-                        val visible =
+                        val blockingBlockPositions =
                             BlockEntityHider.canSee(
                                 player.eyeLocation,
                                 Location(player.world, absoluteX.toDouble(), absoluteY.toDouble(), absoluteZ.toDouble()),
                             )
-                        if (!visible) {
+                        if (blockingBlockPositions != null) {
                             val blockPos = BlockPosition(absoluteX, absoluteY, absoluteZ)
                             tileEntitiesToRemove += blockPos
-                            AntiPieRay.blockEntityHider.addPos(player.uniqueId, blockPos)
+                            AntiPieRay.blockEntityHider.addPos(player.uniqueId, blockPos, blockingBlockPositions)
                             baseChunk.set(x, y, z, StateTypes.AIR.createBlockState())
                         }
                     }

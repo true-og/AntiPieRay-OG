@@ -1,4 +1,4 @@
-package net.trueog.antiPieRayOG
+package net.trueog.antipierayog
 
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.event.PacketListenerPriority
