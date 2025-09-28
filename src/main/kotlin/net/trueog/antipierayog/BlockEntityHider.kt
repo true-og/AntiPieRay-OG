@@ -395,46 +395,51 @@ class BlockEntityHider {
         fun Location.toBlockPosition() = BlockPosition(blockX, blockY, blockZ)
     }
 
-    val hiddenBlocksForPlayer: MutableMap<UUID, MutableSet<BlockPosition>> = ConcurrentHashMap()
-    val blockHiddenForPlayers: MutableMap<BlockPosition, MutableSet<UUID>> = ConcurrentHashMap()
+    val hiddenBlocksByPlayer: MutableMap<UUID, MutableSet<BlockPosition>> = ConcurrentHashMap()
+    val playersByHiddenBlock: MutableMap<BlockPosition, MutableSet<UUID>> = ConcurrentHashMap()
 
     /**
      * Outer map key: A hidden block
      *
      * Inner map key: A block that is preventing the hidden block to be seen
      */
-    val blockBlockedByForPlayer: MutableMap<BlockPosition, MutableMap<BlockPosition, MutableSet<UUID>>> =
+    val blockingBlockForPlayersByHiddenBlock: MutableMap<BlockPosition, MutableMap<BlockPosition, MutableSet<UUID>>> =
         ConcurrentHashMap()
 
     fun addPos(uuid: UUID, pos: BlockPosition, blockingPositions: Set<BlockPosition>) {
-        hiddenBlocksForPlayer.computeIfAbsent(uuid) { ConcurrentHashMap.newKeySet() }.add(pos)
-        blockHiddenForPlayers.computeIfAbsent(pos) { ConcurrentHashMap.newKeySet() }.add(uuid)
-        val entry = blockBlockedByForPlayer.computeIfAbsent(pos) { ConcurrentHashMap() }
+        hiddenBlocksByPlayer.computeIfAbsent(uuid) { ConcurrentHashMap.newKeySet() }.add(pos)
+        playersByHiddenBlock.computeIfAbsent(pos) { ConcurrentHashMap.newKeySet() }.add(uuid)
+        val entry = blockingBlockForPlayersByHiddenBlock.computeIfAbsent(pos) { ConcurrentHashMap() }
         blockingPositions.forEach { entry.computeIfAbsent(it) { ConcurrentHashMap.newKeySet() }.add(uuid) }
     }
 
     fun removePos(uuid: UUID, pos: BlockPosition, skipBlockBlockedByForPlayer: Boolean = false) {
-        hiddenBlocksForPlayer[uuid]?.remove(pos)
-        blockHiddenForPlayers[pos]?.remove(uuid)
+        hiddenBlocksByPlayer[uuid]?.remove(pos)
+        playersByHiddenBlock[pos]?.remove(uuid)
         if (!skipBlockBlockedByForPlayer) {
-            blockBlockedByForPlayer[pos]?.entries?.removeAll { (_, uuids) ->
+            blockingBlockForPlayersByHiddenBlock[pos]?.entries?.removeAll { (_, uuids) ->
                 uuids.remove(uuid)
                 uuids.isEmpty()
             }
         }
 
-        if (hiddenBlocksForPlayer[uuid]?.isEmpty() == true) hiddenBlocksForPlayer.remove(uuid)
-        if (blockHiddenForPlayers[pos]?.isEmpty() == true) blockHiddenForPlayers.remove(pos)
+        if (hiddenBlocksByPlayer[uuid]?.isEmpty() == true) hiddenBlocksByPlayer.remove(uuid)
+        if (playersByHiddenBlock[pos]?.isEmpty() == true) playersByHiddenBlock.remove(pos)
         if (!skipBlockBlockedByForPlayer) {
-            if (blockBlockedByForPlayer[pos]?.isEmpty() == true) blockBlockedByForPlayer.remove(pos)
+            if (blockingBlockForPlayersByHiddenBlock[pos]?.isEmpty() == true) blockingBlockForPlayersByHiddenBlock.remove(pos)
         }
     }
 
     fun removeAllPos(uuid: UUID) {
-        val hiddenBlocks = hiddenBlocksForPlayer[uuid] ?: return
-        hiddenBlocks.forEach { blockHiddenForPlayers[it]?.remove(uuid) }
-        hiddenBlocksForPlayer.remove(uuid)
-        blockBlockedByForPlayer.entries.removeAll {
+        val hiddenBlocks = hiddenBlocksByPlayer[uuid] ?: return
+        hiddenBlocks.forEach {
+            playersByHiddenBlock.computeIfPresent(it) { _, uuids ->
+                uuids.remove(uuid)
+                if (uuids.isEmpty()) null else uuids
+            }
+        }
+        hiddenBlocksByPlayer.remove(uuid)
+        blockingBlockForPlayersByHiddenBlock.entries.removeAll {
             it.value.values.removeAll { uuids ->
                 uuids.remove(uuid)
                 uuids.isEmpty()
@@ -447,14 +452,14 @@ class BlockEntityHider {
         val threshold = min(player.viewDistance, Bukkit.getViewDistance()) + 1
         val chunkX = player.location.x.toInt() shr 4
         val chunkZ = player.location.z.toInt() shr 4
-        blockHiddenForPlayers
+        playersByHiddenBlock
             .filterKeys { abs(chunkX - (it.x shr 4)) > threshold || abs(chunkZ - (it.z shr 4)) > threshold }
             .forEach { (pos, uuids) -> uuids.forEach { uuid -> removePos(uuid, pos) } }
     }
 
     fun removeIfNeeded(pos: BlockPosition, world: World) {
         if (world.getBlockAt(pos.toLocation(world)).type !in AntiPieRay.hideMaterials) {
-            blockHiddenForPlayers
+            playersByHiddenBlock
                 .filterKeys { pos == it }
                 .values
                 .forEach { uuids -> uuids.forEach { uuid -> removePos(uuid, pos) } }
@@ -462,7 +467,7 @@ class BlockEntityHider {
     }
 
     fun updateBlockVisibility(player: Player) {
-        val blockList = hiddenBlocksForPlayer[player.uniqueId] ?: return
+        val blockList = hiddenBlocksByPlayer[player.uniqueId] ?: return
         blockList.forEach {
             val loc = it.toLocation(player.world)
             val blockingBlock = canSee(player.eyeLocation, loc)
@@ -477,7 +482,7 @@ class BlockEntityHider {
 
     fun updateBlockVisibility(pos: BlockPosition, world: World) {
         removeIfNeeded(pos, world)
-        blockBlockedByForPlayer.entries.removeAll { (blockPos, entry) ->
+        blockingBlockForPlayersByHiddenBlock.entries.removeAll { (blockPos, entry) ->
             val blockLoc = blockPos.toLocation(world)
             val posEntry = entry[pos]
             posEntry?.removeAll { uuid ->
