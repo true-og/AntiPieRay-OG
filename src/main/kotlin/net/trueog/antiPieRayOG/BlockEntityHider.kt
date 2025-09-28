@@ -15,42 +15,118 @@ import org.bukkit.util.Vector
 
 class BlockEntityHider {
     companion object {
+        val eyeOffsetMap =
+            mapOf(
+                // Up
+                Vector(0, 1, 0) to
+                    listOf(
+                        Vector(0.5, 0.5, 0.5),
+                        Vector(0.5, 0.5, -0.5),
+                        Vector(-0.5, 0.5, 0.5),
+                        Vector(-0.5, 0.5, -0.5),
+                        Vector(0, 0, 0),
+                    ),
+                // Down
+                Vector(0, -1, 0) to
+                    listOf(
+                        Vector(0.5, -0.5, 0.5),
+                        Vector(0.5, -0.5, -0.5),
+                        Vector(-0.5, -0.5, 0.5),
+                        Vector(-0.5, -0.5, -0.5),
+                        Vector(0, 0, 0),
+                    ),
+                // North
+                Vector(0, 0, -1) to
+                    listOf(
+                        Vector(0.5, 0.5, -0.5),
+                        Vector(0.5, -0.5, -0.5),
+                        Vector(-0.5, 0.5, -0.5),
+                        Vector(-0.5, -0.5, -0.5),
+                        Vector(0, 0, 0),
+                    ),
+                // South
+                Vector(0, 0, 1) to
+                    listOf(
+                        Vector(0.5, 0.5, 0.5),
+                        Vector(0.5, -0.5, 0.5),
+                        Vector(-0.5, 0.5, 0.5),
+                        Vector(-0.5, -0.5, 0.5),
+                        Vector(0, 0, 0),
+                    ),
+                // West
+                Vector(-1, 0, 0) to
+                    listOf(
+                        Vector(-0.5, 0.5, 0.5),
+                        Vector(-0.5, -0.5, 0.5),
+                        Vector(-0.5, 0.5, -0.5),
+                        Vector(-0.5, -0.5, -0.5),
+                        Vector(0, 0, 0),
+                    ),
+                // East
+                Vector(1, 0, 0) to
+                    listOf(
+                        Vector(0.5, 0.5, 0.5),
+                        Vector(0.5, -0.5, 0.5),
+                        Vector(0.5, 0.5, -0.5),
+                        Vector(0.5, -0.5, -0.5),
+                        Vector(0, 0, 0),
+                    ),
+            )
+
+        val blockOffsets =
+            listOf(
+                Vector(0.5, 0.5, 0.5),
+                Vector(0.5, 0.5, -0.5),
+                Vector(0.5, -0.5, 0.5),
+                Vector(0.5, -0.5, -0.5),
+                Vector(-0.5, 0.5, 0.5),
+                Vector(-0.5, 0.5, -0.5),
+                Vector(-0.5, -0.5, 0.5),
+                Vector(-0.5, -0.5, -0.5),
+            )
+
         fun canSee(eye: Location, loc: Location): Boolean {
             // Get the center
             val blockCenterLoc = loc.clone().add(0.5, 0.5, 0.5)
+            if (blockCenterLoc.toVector().subtract(eye.toVector()).dot(eye.direction) < 0) return false
 
-            val offsets =
-                listOf(
-                    Vector(0.5, 0.5, 0.5),
-                    Vector(0.5, 0.5, -0.5),
-                    Vector(0.5, -0.5, 0.5),
-                    Vector(0.5, -0.5, -0.5),
-                    Vector(-0.5, 0.5, 0.5),
-                    Vector(-0.5, 0.5, -0.5),
-                    Vector(-0.5, -0.5, 0.5),
-                    Vector(-0.5, -0.5, -0.5),
-                )
+            val blockCenterDir = eye.clone().toVector().subtract(blockCenterLoc.toVector()).normalize()
 
-            for (offset in offsets) {
-                val blockLoc = blockCenterLoc.clone().add(offset)
-                val direction = blockLoc.toVector().subtract(eye.toVector()).normalize()
-                val offsetEye = eye.clone().setDirection(direction)
-                val maxDistance = offsetEye.distance(blockLoc).roundToInt() - 1
-                val blockIterator = BlockIterator(offsetEye, 0.0, maxDistance)
-
-                var visible = true
-                while (blockIterator.hasNext()) {
-                    val hitBlock = blockIterator.next()
-                    if (hitBlock == loc.block) {
-                        break
-                    }
-                    if (!isAir(hitBlock.type) && !isLiquid(hitBlock.type) && !isTransparent(hitBlock.type)) {
-                        visible = false
-                        break
-                    }
+            var bestIndex: Int = -1
+            var bestDot = -Double.MAX_VALUE
+            eyeOffsetMap.entries.forEachIndexed { index, (faceVec, _) ->
+                val dot = blockCenterDir.dot(faceVec)
+                if (dot > bestDot) {
+                    bestDot = dot
+                    bestIndex = index
                 }
+            }
+            val eyeOffsets = eyeOffsetMap.values.elementAt(bestIndex)
 
-                if (visible) return true
+            for (eyeOffset in eyeOffsets) {
+                val offsetEye = eye.clone().add(eyeOffset)
+                for (offset in blockOffsets) {
+                    val blockLoc = blockCenterLoc.clone().add(offset)
+                    val direction = blockLoc.toVector().subtract(offsetEye.toVector()).normalize()
+                    val eyeFacing = offsetEye.clone().setDirection(direction)
+                    val maxDistance = eyeFacing.distance(blockLoc).roundToInt() - 1
+                    val blockIterator = BlockIterator(eyeFacing, 0.0, maxDistance)
+
+                    var visible = true
+                    while (blockIterator.hasNext()) {
+                        val hitBlock = blockIterator.next()
+                        if (hitBlock == loc.block) {
+                            break
+                        }
+                        val hitBlockType = hitBlock.type
+                        if (!isAir(hitBlockType) && !isLiquid(hitBlockType) && !isTransparent(hitBlockType)) {
+                            visible = false
+                            break
+                        }
+                    }
+
+                    if (visible) return true
+                }
             }
             return false
         }
@@ -61,7 +137,7 @@ class BlockEntityHider {
                 Material.ACACIA_DOOR,
                 Material.ACACIA_FENCE,
                 Material.ACACIA_FENCE_GATE,
-                Material.ACACIA_HANGING_SIGN,
+                //                Material.ACACIA_HANGING_SIGN,
                 Material.ACACIA_LEAVES,
                 Material.ACACIA_LOG,
                 Material.ACACIA_PLANKS,
@@ -70,35 +146,35 @@ class BlockEntityHider {
                 Material.ACACIA_SLAB,
                 Material.ACACIA_STAIRS,
                 Material.ACACIA_TRAPDOOR,
-                Material.ACACIA_WALL_HANGING_SIGN,
+                //                Material.ACACIA_WALL_HANGING_SIGN,
                 Material.ACACIA_WALL_SIGN,
                 Material.ACACIA_WOOD,
                 Material.AZALEA_LEAVES,
                 Material.BAMBOO,
-                Material.BAMBOO_BLOCK,
-                Material.BAMBOO_DOOR,
-                Material.BAMBOO_FENCE,
-                Material.BAMBOO_FENCE_GATE,
-                Material.BAMBOO_HANGING_SIGN,
-                Material.BAMBOO_MOSAIC,
-                Material.BAMBOO_MOSAIC_SLAB,
-                Material.BAMBOO_MOSAIC_STAIRS,
-                Material.BAMBOO_PLANKS,
-                Material.BAMBOO_PRESSURE_PLATE,
+                //                Material.BAMBOO_BLOCK,
+                //                Material.BAMBOO_DOOR,
+                //                Material.BAMBOO_FENCE,
+                //                Material.BAMBOO_FENCE_GATE,
+                //                Material.BAMBOO_HANGING_SIGN,
+                //                Material.BAMBOO_MOSAIC,
+                //                Material.BAMBOO_MOSAIC_SLAB,
+                //                Material.BAMBOO_MOSAIC_STAIRS,
+                //                Material.BAMBOO_PLANKS,
+                //                Material.BAMBOO_PRESSURE_PLATE,
                 Material.BAMBOO_SAPLING,
-                Material.BAMBOO_SIGN,
-                Material.BAMBOO_SLAB,
-                Material.BAMBOO_STAIRS,
-                Material.BAMBOO_TRAPDOOR,
-                Material.BAMBOO_WALL_HANGING_SIGN,
-                Material.BAMBOO_WALL_SIGN,
+                //                Material.BAMBOO_SIGN,
+                //                Material.BAMBOO_SLAB,
+                //                Material.BAMBOO_STAIRS,
+                //                Material.BAMBOO_TRAPDOOR,
+                //                Material.BAMBOO_WALL_HANGING_SIGN,
+                //                Material.BAMBOO_WALL_SIGN,
                 Material.BARREL,
                 Material.BEEHIVE,
                 Material.BEE_NEST,
                 Material.BIRCH_DOOR,
                 Material.BIRCH_FENCE,
                 Material.BIRCH_FENCE_GATE,
-                Material.BIRCH_HANGING_SIGN,
+                //                Material.BIRCH_HANGING_SIGN,
                 Material.BIRCH_LEAVES,
                 Material.BIRCH_LOG,
                 Material.BIRCH_PLANKS,
@@ -128,27 +204,27 @@ class BlockEntityHider {
                 Material.BROWN_WOOL,
                 Material.CAMPFIRE,
                 Material.CARTOGRAPHY_TABLE,
-                Material.CHERRY_DOOR,
-                Material.CHERRY_FENCE,
-                Material.CHERRY_FENCE_GATE,
-                Material.CHERRY_HANGING_SIGN,
-                Material.CHERRY_LEAVES,
-                Material.CHERRY_LOG,
-                Material.CHERRY_PLANKS,
-                Material.CHERRY_PRESSURE_PLATE,
-                Material.CHERRY_SIGN,
-                Material.CHERRY_SLAB,
-                Material.CHERRY_STAIRS,
-                Material.CHERRY_TRAPDOOR,
-                Material.CHERRY_WALL_HANGING_SIGN,
-                Material.CHERRY_WALL_SIGN,
-                Material.CHERRY_WOOD,
+                //                Material.CHERRY_DOOR,
+                //                Material.CHERRY_FENCE,
+                //                Material.CHERRY_FENCE_GATE,
+                //                Material.CHERRY_HANGING_SIGN,
+                //                Material.CHERRY_LEAVES,
+                //                Material.CHERRY_LOG,
+                //                Material.CHERRY_PLANKS,
+                //                Material.CHERRY_PRESSURE_PLATE,
+                //                Material.CHERRY_SIGN,
+                //                Material.CHERRY_SLAB,
+                //                Material.CHERRY_STAIRS,
+                //                Material.CHERRY_TRAPDOOR,
+                //                Material.CHERRY_WALL_HANGING_SIGN,
+                //                Material.CHERRY_WALL_SIGN,
+                //                Material.CHERRY_WOOD,
                 Material.CHEST,
-                Material.CHISELED_BOOKSHELF,
+                //                Material.CHISELED_BOOKSHELF,
                 Material.COMPOSTER,
                 Material.CRAFTING_TABLE,
-                Material.CRIMSON_HANGING_SIGN,
-                Material.CRIMSON_WALL_HANGING_SIGN,
+                //                Material.CRIMSON_HANGING_SIGN,
+                //                Material.CRIMSON_WALL_HANGING_SIGN,
                 Material.CYAN_BANNER,
                 Material.CYAN_BED,
                 Material.CYAN_CARPET,
@@ -157,7 +233,7 @@ class BlockEntityHider {
                 Material.DARK_OAK_DOOR,
                 Material.DARK_OAK_FENCE,
                 Material.DARK_OAK_FENCE_GATE,
-                Material.DARK_OAK_HANGING_SIGN,
+                //                Material.DARK_OAK_HANGING_SIGN,
                 Material.DARK_OAK_LEAVES,
                 Material.DARK_OAK_LOG,
                 Material.DARK_OAK_PLANKS,
@@ -166,7 +242,7 @@ class BlockEntityHider {
                 Material.DARK_OAK_SLAB,
                 Material.DARK_OAK_STAIRS,
                 Material.DARK_OAK_TRAPDOOR,
-                Material.DARK_OAK_WALL_HANGING_SIGN,
+                //                Material.DARK_OAK_WALL_HANGING_SIGN,
                 Material.DARK_OAK_WALL_SIGN,
                 Material.DARK_OAK_WOOD,
                 Material.DAYLIGHT_DETECTOR,
@@ -191,7 +267,7 @@ class BlockEntityHider {
                 Material.JUNGLE_DOOR,
                 Material.JUNGLE_FENCE,
                 Material.JUNGLE_FENCE_GATE,
-                Material.JUNGLE_HANGING_SIGN,
+                //                Material.JUNGLE_HANGING_SIGN,
                 Material.JUNGLE_LEAVES,
                 Material.JUNGLE_LOG,
                 Material.JUNGLE_PLANKS,
@@ -200,7 +276,7 @@ class BlockEntityHider {
                 Material.JUNGLE_SLAB,
                 Material.JUNGLE_STAIRS,
                 Material.JUNGLE_TRAPDOOR,
-                Material.JUNGLE_WALL_HANGING_SIGN,
+                //                Material.JUNGLE_WALL_HANGING_SIGN,
                 Material.JUNGLE_WALL_SIGN,
                 Material.JUNGLE_WOOD,
                 Material.LARGE_FERN,
@@ -230,7 +306,7 @@ class BlockEntityHider {
                 Material.MANGROVE_DOOR,
                 Material.MANGROVE_FENCE,
                 Material.MANGROVE_FENCE_GATE,
-                Material.MANGROVE_HANGING_SIGN,
+                //                Material.MANGROVE_HANGING_SIGN,
                 Material.MANGROVE_LEAVES,
                 Material.MANGROVE_LOG,
                 Material.MANGROVE_PLANKS,
@@ -240,7 +316,7 @@ class BlockEntityHider {
                 Material.MANGROVE_SLAB,
                 Material.MANGROVE_STAIRS,
                 Material.MANGROVE_TRAPDOOR,
-                Material.MANGROVE_WALL_HANGING_SIGN,
+                //                Material.MANGROVE_WALL_HANGING_SIGN,
                 Material.MANGROVE_WALL_SIGN,
                 Material.MANGROVE_WOOD,
                 Material.MUSHROOM_STEM,
@@ -248,7 +324,7 @@ class BlockEntityHider {
                 Material.OAK_DOOR,
                 Material.OAK_FENCE,
                 Material.OAK_FENCE_GATE,
-                Material.OAK_HANGING_SIGN,
+                //                Material.OAK_HANGING_SIGN,
                 Material.OAK_LEAVES,
                 Material.OAK_LOG,
                 Material.OAK_PLANKS,
@@ -257,7 +333,7 @@ class BlockEntityHider {
                 Material.OAK_SLAB,
                 Material.OAK_STAIRS,
                 Material.OAK_TRAPDOOR,
-                Material.OAK_WALL_HANGING_SIGN,
+                //                Material.OAK_WALL_HANGING_SIGN,
                 Material.OAK_WALL_SIGN,
                 Material.OAK_WOOD,
                 Material.ORANGE_BANNER,
@@ -288,7 +364,7 @@ class BlockEntityHider {
                 Material.SPRUCE_DOOR,
                 Material.SPRUCE_FENCE,
                 Material.SPRUCE_FENCE_GATE,
-                Material.SPRUCE_HANGING_SIGN,
+                //                Material.SPRUCE_HANGING_SIGN,
                 Material.SPRUCE_LEAVES,
                 Material.SPRUCE_LOG,
                 Material.SPRUCE_PLANKS,
@@ -297,16 +373,16 @@ class BlockEntityHider {
                 Material.SPRUCE_SLAB,
                 Material.SPRUCE_STAIRS,
                 Material.SPRUCE_TRAPDOOR,
-                Material.SPRUCE_WALL_HANGING_SIGN,
+                //                Material.SPRUCE_WALL_HANGING_SIGN,
                 Material.SPRUCE_WALL_SIGN,
                 Material.SPRUCE_WOOD,
                 Material.STRIPPED_ACACIA_LOG,
                 Material.STRIPPED_ACACIA_WOOD,
-                Material.STRIPPED_BAMBOO_BLOCK,
+                //                Material.STRIPPED_BAMBOO_BLOCK,
                 Material.STRIPPED_BIRCH_LOG,
                 Material.STRIPPED_BIRCH_WOOD,
-                Material.STRIPPED_CHERRY_LOG,
-                Material.STRIPPED_CHERRY_WOOD,
+                //                Material.STRIPPED_CHERRY_LOG,
+                //                Material.STRIPPED_CHERRY_WOOD,
                 Material.STRIPPED_DARK_OAK_LOG,
                 Material.STRIPPED_DARK_OAK_WOOD,
                 Material.STRIPPED_JUNGLE_LOG,
@@ -322,8 +398,8 @@ class BlockEntityHider {
                 Material.TNT,
                 Material.TRAPPED_CHEST,
                 Material.VINE,
-                Material.WARPED_HANGING_SIGN,
-                Material.WARPED_WALL_HANGING_SIGN,
+                //                Material.WARPED_HANGING_SIGN,
+                //                Material.WARPED_WALL_HANGING_SIGN,
                 Material.WHITE_BANNER,
                 Material.WHITE_BED,
                 Material.WHITE_CARPET,
@@ -333,62 +409,7 @@ class BlockEntityHider {
                 Material.YELLOW_BED,
                 Material.YELLOW_CARPET,
                 Material.YELLOW_WALL_BANNER,
-                Material.YELLOW_WOOL,
-                Material.LEGACY_WOOD,
-                Material.LEGACY_LOG,
-                Material.LEGACY_LEAVES,
-                Material.LEGACY_NOTE_BLOCK,
-                Material.LEGACY_BED_BLOCK,
-                Material.LEGACY_LONG_GRASS,
-                Material.LEGACY_DEAD_BUSH,
-                Material.LEGACY_WOOL,
-                Material.LEGACY_TNT,
-                Material.LEGACY_BOOKSHELF,
-                Material.LEGACY_WOOD_STAIRS,
-                Material.LEGACY_CHEST,
-                Material.LEGACY_WORKBENCH,
-                Material.LEGACY_SIGN_POST,
-                Material.LEGACY_WOODEN_DOOR,
-                Material.LEGACY_WALL_SIGN,
-                Material.LEGACY_WOOD_PLATE,
-                Material.LEGACY_JUKEBOX,
-                Material.LEGACY_FENCE,
-                Material.LEGACY_TRAP_DOOR,
-                Material.LEGACY_HUGE_MUSHROOM_1,
-                Material.LEGACY_HUGE_MUSHROOM_2,
-                Material.LEGACY_VINE,
-                Material.LEGACY_FENCE_GATE,
-                Material.LEGACY_WOOD_DOUBLE_STEP,
-                Material.LEGACY_WOOD_STEP,
-                Material.LEGACY_SPRUCE_WOOD_STAIRS,
-                Material.LEGACY_BIRCH_WOOD_STAIRS,
-                Material.LEGACY_JUNGLE_WOOD_STAIRS,
-                Material.LEGACY_TRAPPED_CHEST,
-                Material.LEGACY_DAYLIGHT_DETECTOR,
-                Material.LEGACY_CARPET,
-                Material.LEGACY_LEAVES_2,
-                Material.LEGACY_LOG_2,
-                Material.LEGACY_ACACIA_STAIRS,
-                Material.LEGACY_DARK_OAK_STAIRS,
-                Material.LEGACY_DOUBLE_PLANT,
-                Material.LEGACY_SPRUCE_FENCE_GATE,
-                Material.LEGACY_BIRCH_FENCE_GATE,
-                Material.LEGACY_JUNGLE_FENCE_GATE,
-                Material.LEGACY_DARK_OAK_FENCE_GATE,
-                Material.LEGACY_ACACIA_FENCE_GATE,
-                Material.LEGACY_SPRUCE_FENCE,
-                Material.LEGACY_BIRCH_FENCE,
-                Material.LEGACY_JUNGLE_FENCE,
-                Material.LEGACY_DARK_OAK_FENCE,
-                Material.LEGACY_ACACIA_FENCE,
-                Material.LEGACY_STANDING_BANNER,
-                Material.LEGACY_WALL_BANNER,
-                Material.LEGACY_DAYLIGHT_DETECTOR_INVERTED,
-                Material.LEGACY_SPRUCE_DOOR,
-                Material.LEGACY_BIRCH_DOOR,
-                Material.LEGACY_JUNGLE_DOOR,
-                Material.LEGACY_ACACIA_DOOR,
-                Material.LEGACY_DARK_OAK_DOOR ->
+                Material.YELLOW_WOOL ->
                     // </editor-fold>
                     true
                 else -> false
