@@ -9,6 +9,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockBurnEvent
 import org.bukkit.event.block.BlockExplodeEvent
+import org.bukkit.event.entity.EntityExplodeEvent
 import org.bukkit.event.player.PlayerChangedWorldEvent
 import org.bukkit.event.player.PlayerMoveEvent
 
@@ -27,9 +28,6 @@ class Events : Listener {
     }
 
     fun genericBlockBreakHandler(block: Block) {
-        val worldName = block.world.name
-        if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
-
         Bukkit.getScheduler()
             .runTaskLaterAsynchronously(
                 AntiPieRay.plugin,
@@ -42,17 +40,34 @@ class Events : Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onBlockBreak(event: BlockBreakEvent) {
+        val worldName = event.block.world.name
+        if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
+
         genericBlockBreakHandler(event.block)
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onBlockBurn(event: BlockBurnEvent) {
+        val worldName = event.block.world.name
+        if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
+
         genericBlockBreakHandler(event.block)
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     fun onBlockExplode(event: BlockExplodeEvent) {
+        val worldName = event.block.world.name
+        if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
+
         genericBlockBreakHandler(event.block)
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    fun onEntityExplode(event: EntityExplodeEvent) {
+        val worldName = event.entity.world.name
+        if (worldName != "world" && worldName != "world_nether" && worldName != "world_the_end") return
+
+        event.blockList().forEach { genericBlockBreakHandler(it) }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
