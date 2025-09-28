@@ -355,7 +355,10 @@ class BlockEntityHider {
                 Material.YELLOW_BANNER,
                 Material.YELLOW_BED,
                 Material.YELLOW_CARPET,
-                Material.YELLOW_WALL_BANNER ->
+                Material.YELLOW_WALL_BANNER,
+                Material.PISTON,
+                Material.STICKY_PISTON,
+                Material.PISTON_HEAD ->
                     // </editor-fold>
                     true
                 else -> false
