@@ -116,7 +116,7 @@ class BlockEntityHider {
                     val blockLoc = blockCenterLoc.clone().add(offset)
                     val direction = blockLoc.toVector().subtract(offsetEye.toVector()).normalize()
                     val eyeFacing = offsetEye.clone().setDirection(direction)
-                    val maxDistance = ceil(eyeFacing.distance(blockLoc)).toInt()
+                    val maxDistance = min(ceil(eyeFacing.distance(blockLoc)).toInt(), 140)
                     val blockIterator = BlockIterator(eyeFacing, 0.0, maxDistance)
 
                     var visible = true
