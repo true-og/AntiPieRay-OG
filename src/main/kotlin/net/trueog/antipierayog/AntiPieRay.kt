@@ -113,5 +113,13 @@ class AntiPieRay : JavaPlugin() {
     override fun onDisable() {
         Bukkit.getScheduler().cancelTasks(this)
         PacketEvents.getAPI().terminate()
+
+        while (getActiveTasks() > 0) {
+            Thread.sleep(25)
+        }
+    }
+
+    fun getActiveTasks(): Int {
+        return Bukkit.getScheduler().activeWorkers.count { it.owner == this }
     }
 }
