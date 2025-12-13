@@ -2,9 +2,9 @@ import java.io.BufferedReader
 
 plugins {
     eclipse
-    kotlin("jvm") version "2.2.20"
-    id("com.diffplug.spotless") version "7.0.4"
-    id("com.gradleup.shadow") version "8.3.6"
+    kotlin("jvm") version "2.1.21"
+    id("com.diffplug.spotless") version "8.1.0"
+    id("com.gradleup.shadow") version "8.3.9"
 }
 
 val commitHash =
