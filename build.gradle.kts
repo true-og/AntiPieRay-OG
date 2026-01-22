@@ -36,7 +36,7 @@ dependencies {
     paperweight.paperDevBundle("1.19.4-R0.1-SNAPSHOT")
 
     compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
-    implementation("com.github.retrooper:packetevents-spigot:2.9.5")
+    implementation("com.github.retrooper:packetevents-spigot:2.11.1")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 }
 
