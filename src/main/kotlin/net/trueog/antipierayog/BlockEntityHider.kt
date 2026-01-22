@@ -5,10 +5,14 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.min
+import net.minecraft.core.BlockPos
+import net.minecraft.server.level.ServerLevel
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
+import org.bukkit.block.Block
+import org.bukkit.craftbukkit.v1_19_R3.CraftWorld
 import org.bukkit.entity.Player
 import org.bukkit.util.BlockIterator
 import org.bukkit.util.Vector
@@ -85,6 +89,15 @@ class BlockEntityHider {
                 Vector(-0.49, -0.49, -0.49),
             )
 
+        val Block.typeFast: Material
+            get() {
+                val craftWorld = (world as CraftWorld).handle
+                val serverChunkCache = (craftWorld as ServerLevel).getChunkSource()
+                val chunk = serverChunkCache.getChunkAtIfLoadedMainThread(this.x shr 4, this.z shr 4)
+                val blockState = chunk.getBlockState(BlockPos(this.x, this.y, this.z))
+                return blockState.bukkitMaterial
+            }
+
         fun canSee(eye: Location, loc: Location): Set<BlockPosition>? {
             // Get the center
             val blockCenterLoc = loc.clone().add(0.5, 0.5, 0.5)
@@ -125,7 +138,7 @@ class BlockEntityHider {
                         if (hitBlock == loc.block) {
                             break
                         }
-                        val hitBlockType = hitBlock.type
+                        val hitBlockType = hitBlock.typeFast
                         if (!isAir(hitBlockType) && !isLiquid(hitBlockType) && !isTransparent(hitBlockType)) {
                             if (eyeOffset == Vector(0, 0, 0)) {
                                 blockingBlocks += hitBlock.location.toBlockPosition()
