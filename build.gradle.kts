@@ -3,6 +3,7 @@ import java.io.BufferedReader
 plugins {
     eclipse
     kotlin("jvm") version "2.2.20"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.19"
     id("com.diffplug.spotless") version "7.0.4"
     id("com.gradleup.shadow") version "8.3.6"
 }
@@ -32,12 +33,17 @@ repositories {
 }
 
 dependencies {
+    paperweight.paperDevBundle("1.19.4-R0.1-SNAPSHOT")
+
     compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
     implementation("com.github.retrooper:packetevents-spigot:2.9.5")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 }
 
+paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.REOBF_PRODUCTION
+
 tasks {
+    assemble { dependsOn(reobfJar) }
     build {
         dependsOn(spotlessApply)
         dependsOn(shadowJar)
