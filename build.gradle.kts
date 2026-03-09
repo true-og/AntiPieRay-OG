@@ -22,7 +22,7 @@ val commitHash =
 
 val apiVersion = "1.19"
 
-group = "net.trueog"
+group = "net.trueog.antipierayog"
 
 version = "$apiVersion-$commitHash"
 
@@ -49,7 +49,11 @@ tasks {
         dependsOn(shadowJar)
     }
     jar { archiveClassifier.set("part") }
-    shadowJar { archiveClassifier.set("") }
+    shadowJar {
+        archiveClassifier.set("")
+        isEnableRelocation = true
+        relocationPrefix = "${project.group}.shadow"
+    }
 }
 
 tasks.processResources {
