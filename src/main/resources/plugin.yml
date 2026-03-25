@@ -4,4 +4,4 @@ main: net.trueog.antipierayog.AntiPieRay
 api-version: '${apiVersion}'
 author: "SKBotNL"
 depend:
-  - PacketEvents-OG
+  - PacketEvents
