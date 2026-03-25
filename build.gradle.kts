@@ -29,14 +29,14 @@ version = "$apiVersion-$commitHash"
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/") { name = "papermc-repo" }
-    maven("https://repo.codemc.io/repository/maven-releases/") { name = "codemc-repo" }
+    maven("https://repo.codemc.io/repository/maven-releases/") { name = "codemc-releases" }
+    maven("https://repo.codemc.io/repository/maven-snapshots/") { name = "codemc-snapshots" }
 }
 
 dependencies {
     paperweight.paperDevBundle("1.19.4-R0.1-SNAPSHOT")
-
     compileOnly("io.papermc.paper:paper-api:1.19.4-R0.1-SNAPSHOT")
-    compileOnly("com.github.retrooper:packetevents-spigot:2.9.5")
+    compileOnly("com.github.retrooper:packetevents-spigot:2.11.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 }
 
