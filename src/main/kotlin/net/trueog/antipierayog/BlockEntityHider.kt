@@ -93,7 +93,8 @@ class BlockEntityHider {
             get() {
                 val craftWorld = (world as CraftWorld).handle
                 val serverChunkCache = (craftWorld as ServerLevel).getChunkSource()
-                val chunk = serverChunkCache.getChunkAtIfLoadedMainThread(this.x shr 4, this.z shr 4) ?: return Material.AIR
+                val chunk =
+                    serverChunkCache.getChunkAtIfLoadedMainThread(this.x shr 4, this.z shr 4) ?: return Material.AIR
                 val blockState = chunk.getBlockState(BlockPos(this.x, this.y, this.z))
                 return blockState.bukkitMaterial
             }
