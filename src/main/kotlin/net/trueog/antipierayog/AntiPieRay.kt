@@ -3,8 +3,8 @@ package net.trueog.antipierayog
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.event.PacketListenerPriority
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType
-import com.github.retrooper.packetevents.protocol.world.states.type.StateTypes
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
+import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import java.util.*
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -14,7 +14,6 @@ class AntiPieRay : JavaPlugin() {
     companion object {
         lateinit var plugin: AntiPieRay
         lateinit var blockEntityHider: BlockEntityHider
-        val hideStateTypes: MutableSet<StateType> = Collections.newSetFromMap(IdentityHashMap())
         val hideMaterials: MutableSet<Material> =
             Collections.newSetFromMap<Material>(IdentityHashMap()).apply {
                 addAll(
@@ -53,47 +52,18 @@ class AntiPieRay : JavaPlugin() {
                     )
                 )
             }
+        val hideStateTypes: MutableSet<StateType> = Collections.newSetFromMap(IdentityHashMap(hideMaterials.size))
     }
 
     override fun onLoad() {
         PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this))
         PacketEvents.getAPI().load()
-        // Has to be here otherwise the plugin doesn't load
-        hideStateTypes.addAll(
-            listOf(
-                // <editor-fold desc="Block entities">
-                StateTypes.CHEST,
-                StateTypes.TRAPPED_CHEST,
-                StateTypes.SHULKER_BOX,
-                StateTypes.WHITE_SHULKER_BOX,
-                StateTypes.ORANGE_SHULKER_BOX,
-                StateTypes.MAGENTA_SHULKER_BOX,
-                StateTypes.LIGHT_BLUE_SHULKER_BOX,
-                StateTypes.YELLOW_SHULKER_BOX,
-                StateTypes.LIME_SHULKER_BOX,
-                StateTypes.PINK_SHULKER_BOX,
-                StateTypes.GRAY_SHULKER_BOX,
-                StateTypes.LIGHT_GRAY_SHULKER_BOX,
-                StateTypes.CYAN_SHULKER_BOX,
-                StateTypes.PURPLE_SHULKER_BOX,
-                StateTypes.BLUE_SHULKER_BOX,
-                StateTypes.BROWN_SHULKER_BOX,
-                StateTypes.GREEN_SHULKER_BOX,
-                StateTypes.RED_SHULKER_BOX,
-                StateTypes.BLACK_SHULKER_BOX,
-                StateTypes.CAMPFIRE,
-                StateTypes.SOUL_CAMPFIRE,
-                StateTypes.BEACON,
-                StateTypes.ENCHANTING_TABLE,
-                StateTypes.DRAGON_HEAD,
-                StateTypes.DRAGON_WALL_HEAD,
-                StateTypes.CONDUIT,
-                StateTypes.BELL,
-                StateTypes.ENDER_CHEST,
-                StateTypes.SPAWNER,
-                // </editor-fold>
-            )
-        )
+
+        // Convert all the hidden materials to a PacketEvents StateType
+        hideMaterials.forEach {
+            SpigotConversionUtil.fromBukkitItemMaterial(it).placedType?.let { element -> hideStateTypes.add(element) }
+        }
+
         PacketEvents.getAPI().eventManager.registerListener(ChunkDataPacketListener(), PacketListenerPriority.NORMAL)
         PacketEvents.getAPI().eventManager.registerListener(BlockChangePacketListener(), PacketListenerPriority.NORMAL)
         PacketEvents.getAPI()
