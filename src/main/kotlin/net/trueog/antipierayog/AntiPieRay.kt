@@ -1,9 +1,9 @@
 package net.trueog.antipierayog
 
 import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.event.PacketListenerCommon
 import com.github.retrooper.packetevents.event.PacketListenerPriority
 import com.github.retrooper.packetevents.protocol.world.states.type.StateType
-import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
 import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import java.util.*
 import org.bukkit.Bukkit
@@ -53,35 +53,38 @@ class AntiPieRay : JavaPlugin() {
                 )
             }
         val hideStateTypes: MutableSet<StateType> = Collections.newSetFromMap(IdentityHashMap(hideMaterials.size))
+
+        private var chunkDataHandle: PacketListenerCommon? = null
+        private var blockChangeHandle: PacketListenerCommon? = null
+        private var playerPosRotHandle: PacketListenerCommon? = null
     }
 
-    override fun onLoad() {
-        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this))
-        PacketEvents.getAPI().load()
+    override fun onEnable() {
+        plugin = this
+        blockEntityHider = BlockEntityHider()
 
-        // Convert all the hidden materials to a PacketEvents StateType
         hideMaterials.forEach {
             SpigotConversionUtil.fromBukkitItemMaterial(it).placedType?.let { element -> hideStateTypes.add(element) }
         }
 
-        PacketEvents.getAPI().eventManager.registerListener(ChunkDataPacketListener(), PacketListenerPriority.NORMAL)
-        PacketEvents.getAPI().eventManager.registerListener(BlockChangePacketListener(), PacketListenerPriority.NORMAL)
-        PacketEvents.getAPI()
-            .eventManager
-            .registerListener(PlayerPositionRotationPacketListener(), PacketListenerPriority.MONITOR)
-    }
-
-    override fun onEnable() {
-        PacketEvents.getAPI().init()
-
-        plugin = this
-        blockEntityHider = BlockEntityHider()
+        val eventManager = PacketEvents.getAPI().eventManager
+        chunkDataHandle = eventManager.registerListener(ChunkDataPacketListener(), PacketListenerPriority.NORMAL)
+        blockChangeHandle = eventManager.registerListener(BlockChangePacketListener(), PacketListenerPriority.NORMAL)
+        playerPosRotHandle =
+            eventManager.registerListener(PlayerPositionRotationPacketListener(), PacketListenerPriority.MONITOR)
 
         server.pluginManager.registerEvents(Events(), this)
     }
 
     override fun onDisable() {
         Bukkit.getScheduler().cancelTasks(this)
-        PacketEvents.getAPI().terminate()
+
+        val eventManager = PacketEvents.getAPI().eventManager
+        chunkDataHandle?.let { eventManager.unregisterListener(it) }
+        blockChangeHandle?.let { eventManager.unregisterListener(it) }
+        playerPosRotHandle?.let { eventManager.unregisterListener(it) }
+        chunkDataHandle = null
+        blockChangeHandle = null
+        playerPosRotHandle = null
     }
 }
